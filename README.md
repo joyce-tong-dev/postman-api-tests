@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/joyce-tong/Postman-API-Tests">
+  <a href="https://github.com/joyce-tong-dev/postman-api-tests">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -37,7 +37,7 @@ We will check various aspects of the response for each request, including the bo
 ## How to install and run tests
 You can run the tests either in Postman or in terminal using Newman.
 
-To begin, clone this repo to your local machine, or just download zip file from this repo. 
+To begin with, clone this repo to your local machine, or download the zip file from this repo and extract it. 
 
 #### Postman
 Running in Postman is easy. All you need to do is import the collection and environment files into Postman then run the collection. The screeshot below illustrates how to do so.
