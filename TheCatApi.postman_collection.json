@@ -1,0 +1,849 @@
+{
+	"info": {
+		"_postman_id": "b3043321-147b-4e43-88ed-8cb6f3588a43",
+		"name": "TheCatApi",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Favourites",
+			"item": [
+				{
+					"name": "Find Images",
+					"item": [
+						{
+							"name": "Image search",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"// extract the image ids and store them in an environment variable",
+											"_ = require('lodash')",
+											"pm.environment.set('IMAGE_IDS', JSON.stringify(_.map(pm.response.json(), 'id')))",
+											"",
+											"// generate an random unique SUB_ID",
+											"const subId = pm.variables.replaceIn(`{{$randomFirstName}}-{{$randomInt}}`)",
+											"pm.environment.set('SUB_ID', subId)",
+											"",
+											"// reset COUNTER and PAGE_NO to zero",
+											"pm.environment.set('COUNTER', 0)",
+											"pm.environment.set('PAGE_NO', 0)"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{API_KEY}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{BASE_URL}}/v1/images/search?limit=5&order=RANDOM",
+									"host": [
+										"{{BASE_URL}}"
+									],
+									"path": [
+										"v1",
+										"images",
+										"search"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "5"
+										},
+										{
+											"key": "order",
+											"value": "RANDOM"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Positive",
+					"item": [
+						{
+							"name": "Save an image as a Favourite",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Set the IMAGE_ID",
+											"const counter = pm.environment.get('COUNTER')",
+											"const imageIds = JSON.parse(pm.environment.get('IMAGE_IDS'))",
+											"pm.environment.set('IMAGE_ID', imageIds[counter])",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// schema  ",
+											"const schema = {",
+											"    type: 'object',",
+											"    properties: {",
+											"        message: { type: 'string' },",
+											"        id: { type: ['integer', 'string'] },",
+											"    },",
+											"    required: ['message', 'id'],",
+											"    additionalProperties: false",
+											"}",
+											"",
+											"// tests",
+											"pm.test('Status code is 200', () => {",
+											"    pm.response.to.have.status(200);",
+											"})",
+											"",
+											"pm.test('Validate schema', () => {",
+											"    pm.response.to.have.jsonSchema(schema)",
+											"})",
+											"",
+											"pm.test('Response contains a SUCCESS message and the ID of the new favorite', () => {",
+											"    const body = pm.response.json();",
+											"    pm.expect(body.message).to.eq('SUCCESS')",
+											"    pm.expect(body).to.have.property('id').that.is.a('number')",
+											"})",
+											"",
+											"// looping over the current request in order to add few more favourites (based on the IMAGE_IDS array)",
+											"const nextCount = parseInt(pm.environment.get('COUNTER')) + 1",
+											"const imageIds = JSON.parse(pm.environment.get('IMAGE_IDS'))",
+											"if (nextCount < imageIds.length) {",
+											"    pm.environment.set('COUNTER', nextCount)",
+											"    postman.setNextRequest('Save an image as a Favourite')",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{API_KEY}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"image_id\": \"{{IMAGE_ID}}\",\n  \"sub_id\": \"{{SUB_ID}}\"\n}"
+								},
+								"url": {
+									"raw": "{{BASE_URL}}/v1/favourites",
+									"host": [
+										"{{BASE_URL}}"
+									],
+									"path": [
+										"v1",
+										"favourites"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get your Favourites",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// test variables",
+											"const pageSize = parseInt(pm.environment.get('PAGE_SIZE'))",
+											"const pageNo = parseInt(pm.environment.get('PAGE_NO')) + 1",
+											"const expectedFaves = JSON.parse(pm.environment.get('IMAGE_IDS'))",
+											"const expectedTotalCount = expectedFaves.length",
+											"",
+											"// schema  ",
+											"const schema = {",
+											"    type: 'array',",
+											"    items: {",
+											"        type: 'object',",
+											"        properties: {",
+											"            id: { type: 'integer'}, // stated as of type 'string' on website =P",
+											"            image_id: { type: 'string'},",
+											"            sub_id: { type: 'string'},",
+											"            created_at: { type: 'string' , format: 'date-time' }",
+											"        }",
+											"    },",
+											"    required: ['id', 'image_id', 'sub_id', 'created_at']",
+											"}",
+											"",
+											"// tests",
+											"pm.test('Status code is 200', () => {",
+											"    pm.response.to.have.status(200)",
+											"})",
+											"",
+											"pm.test('Pagination-Count in response header', () => {",
+											"    pm.response.to.have.header(\"pagination-count\")",
+											"    pm.expect(pm.response.headers.get('pagination-count')).to.eql(`${expectedTotalCount}`)",
+											"})",
+											"",
+											"pm.test('Validate schema', () => {",
+											"    pm.response.to.have.jsonSchema(schema)",
+											"})",
+											"",
+											"pm.test('Actual response matches expected data', () => {",
+											"    const favourites = pm.response.json()",
+											"    // work out the expected number of items included in current page",
+											"    const expectedCountOnPage = expectedTotalCount >= pageNo * pageSize ? pageSize : expectedTotalCount % pageSize",
+											"    pm.expect(favourites).to.have.lengthOf(expectedCountOnPage)",
+											"",
+											"    // verify actual data",
+											"    _ = require('lodash')",
+											"    const actualFaves = _.map(pm.response.json(), 'image_id')",
+											"    const start = (pageNo -  1) * pageSize",
+											"    const end = (pageNo -  1) * pageSize + expectedCountOnPage",
+											"    pm.expect(actualFaves).to.include.members(expectedFaves.slice(start, end))",
+											"})",
+											"",
+											"// check pagination",
+											"if (expectedTotalCount > (pageNo * pageSize)) {",
+											"    pm.environment.set('PAGE_NO', pageNo)",
+											"    postman.setNextRequest('Get your Favourites')",
+											"} else {",
+											"    // set FAVOURITE_ID for subsequent tests (GET a favourite and DELETE a favourite)",
+											"    const faves = pm.response.json()",
+											"    pm.environment.set('FAVOURITE_ID', faves[0].id)",
+											"}",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{API_KEY}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{BASE_URL}}/v1/favourites?sub_id={{SUB_ID}}&limit={{PAGE_SIZE}}&page={{PAGE_NO}}",
+									"host": [
+										"{{BASE_URL}}"
+									],
+									"path": [
+										"v1",
+										"favourites"
+									],
+									"query": [
+										{
+											"key": "sub_id",
+											"value": "{{SUB_ID}}"
+										},
+										{
+											"key": "limit",
+											"value": "{{PAGE_SIZE}}"
+										},
+										{
+											"key": "page",
+											"value": "{{PAGE_NO}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get a specific Favourite",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// test variables",
+											"const expectedFaveId = parseInt(pm.environment.get('FAVOURITE_ID'))",
+											"const expectedSubId = pm.variables.replaceIn('{{SUB_ID}}')",
+											"",
+											"// schema",
+											"const schema = {",
+											"    type: 'object',",
+											"    properties: {",
+											"        id: { type: 'integer' }, // stated as of type 'string' on website =P",
+											"        image_id: { type: 'string' },",
+											"        sub_id: { type: 'string' },",
+											"        created_at: { type: 'string', format: 'date-time' }",
+											"    },",
+											"    required: ['id', 'image_id', 'sub_id', 'created_at']",
+											"}",
+											"",
+											"// tests",
+											"pm.test('Status code is 200', () => {",
+											"    pm.response.to.have.status(200)",
+											"})",
+											"",
+											"pm.test('Validate schema', () => {",
+											"    pm.response.to.have.jsonSchema(schema)",
+											"})",
+											"",
+											"pm.test('Actual response matches expected data', () => {",
+											"    const favourite = pm.response.json()",
+											"    pm.expect(favourite.id).to.eql(expectedFaveId)",
+											"    pm.expect(favourite.sub_id).to.eql(expectedSubId)",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{API_KEY}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{BASE_URL}}/v1/favourites/{{FAVOURITE_ID}}",
+									"host": [
+										"{{BASE_URL}}"
+									],
+									"path": [
+										"v1",
+										"favourites",
+										"{{FAVOURITE_ID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete a Favourite",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// test variables",
+											"const favouriteId = parseInt(pm.environment.get('FAVOURITE_ID'))",
+											"",
+											"// schema",
+											"const schema = {",
+											"    type: 'object',",
+											"    properties: {",
+											"        message: { type: 'string' }",
+											"    },",
+											"    required: ['message'],",
+											"    additionalProperties: false",
+											"}",
+											"",
+											"// tests",
+											"pm.test('Status code is 200', () => {",
+											"    pm.response.to.have.status(200)",
+											"})",
+											"",
+											"pm.test('Validate schema', () => {",
+											"    pm.response.to.have.jsonSchema(schema)",
+											"})",
+											"",
+											"pm.test('Actual deletion of the favourite', () => {",
+											"    // GET favourite request",
+											"    const getRequest = {",
+											"        url: `${pm.environment.get('BASE_URL')}/v1/favourites/${favouriteId}`,",
+											"        method: 'GET',",
+											"        header: {",
+											"            'x-api-key': pm.environment.get('API_KEY')",
+											"        },",
+											"    }",
+											"    pm.sendRequest(getRequest, (error, response) => {",
+											"        pm.expect(response.code).to.eql(404)",
+											"    });",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{API_KEY}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{BASE_URL}}/v1/favourites/{{FAVOURITE_ID}}",
+									"host": [
+										"{{BASE_URL}}"
+									],
+									"path": [
+										"v1",
+										"favourites",
+										"{{FAVOURITE_ID}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Negative",
+					"item": [
+						{
+							"name": "Invalid API Key",
+							"item": [
+								{
+									"name": "Save an image as a Favourite (-)",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// Set the IMAGE_ID",
+													"const counter = pm.environment.get('COUNTER')",
+													"const imageIds = JSON.parse(pm.environment.get('IMAGE_IDS'))",
+													"pm.environment.set('IMAGE_ID', imageIds[counter])",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 401', () => {",
+													"    pm.response.to.have.status(401);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('AUTHENTICATION_ERROR - no valid x-api-key in header')",
+													"    pm.expect(error.status).to.eq(401)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{INVALID_API_KEY}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"image_id\": \"{{IMAGE_ID}}\",\n  \"sub_id\": \"{{SUB_ID}}\"\n}"
+										},
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get your Favourites (-)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 401', () => {",
+													"    pm.response.to.have.status(401);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('AUTHENTICATION_ERROR - no valid x-api-key in header')",
+													"    pm.expect(error.status).to.eq(401)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disableBodyPruning": true
+									},
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{INVALID__KEY}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites?sub_id={{SUB_ID}}&limit={{PAGE_SIZE}}&page={{PAGE_NO}}",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites"
+											],
+											"query": [
+												{
+													"key": "sub_id",
+													"value": "{{SUB_ID}}"
+												},
+												{
+													"key": "limit",
+													"value": "{{PAGE_SIZE}}"
+												},
+												{
+													"key": "page",
+													"value": "{{PAGE_NO}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get a specific Favourite (-)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 401', () => {",
+													"    pm.response.to.have.status(401);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('AUTHENTICATION_ERROR - no valid x-api-key in header')",
+													"    pm.expect(error.status).to.eq(401)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{INVALID_KEY}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites/{{FAVOURITE_ID}}",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites",
+												"{{FAVOURITE_ID}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete a Favourite (-)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 401', () => {",
+													"    pm.response.to.have.status(401);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('AUTHENTICATION_ERROR - no valid x-api-key in header')",
+													"    pm.expect(error.status).to.eq(401)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{INVALID_KEY}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites/{{FAVOURITE_ID}}",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites",
+												"{{FAVOURITE_ID}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Duplicate Unique Fields",
+							"item": [
+								{
+									"name": "Save duplicate image as a Favourite to same account",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// Set the IMAGE_ID",
+													"const counter = pm.environment.get('COUNTER')",
+													"const imageIds = JSON.parse(pm.environment.get('IMAGE_IDS'))",
+													"pm.environment.set('IMAGE_ID', imageIds[counter])",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 400', () => {",
+													"    pm.response.to.have.status(400);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('DUPLICATE_FAVOURITE - favourites are unique for account + image_id + sub_id')",
+													"    pm.expect(error.status).to.eq(400)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{API_KEY}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"image_id\": \"{{IMAGE_ID}}\",\n  \"sub_id\": \"{{SUB_ID}}\"\n}"
+										},
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
