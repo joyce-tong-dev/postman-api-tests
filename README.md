@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/joyce-tong-dev/postman-api-tests">
+  <a href="https://github.com/joyce-tong/Postman-API-Tests">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -37,7 +37,7 @@ We will check various aspects of the response for each request, including the bo
 ## How to install and run tests
 You can run the tests either in Postman or in terminal using Newman.
 
-To begin with, clone this repo to your local machine, or download the zip file from this repo and extract it. 
+To begin, clone this repo to your local machine, or just download the [collection]() and [environment]() files from this repo. 
 
 #### Postman
 Running in Postman is easy. All you need to do is import the collection and environment files into Postman then run the collection. The screeshot below illustrates how to do so.
@@ -87,7 +87,14 @@ TheCatApi
 │       └───Duplicate Unique fields
 │       │   │   Save duplicate image as a Favourite to same account
 │       │   │   <more negative tests>
-│
+│       │   
+│       └───Resource Not Found
+│       │   │   Get a non-existent Favourite
+│       │   │   Delete a non-existent Favourite
+│		│ 
+│       └───Bad Request
+│       │   │   Save empty image as Favourite
+│ 
 └───<other API tests>
     │   <test>
     │   <test>
@@ -103,3 +110,34 @@ Some cool Postman features are being used in this project to make the tests more
 
 
 The `Find Image` request is added to the collection merely for test setup. Currently, it will be executed once in order to fetch 5 random images which will then be used in all other `Favourites` tests. The tests can be run over and over again and they should work every time. 
+
+## Test Results
+BUGS FOUND!!! All tests should pass except two of the negative tests which are expected to fail. Don't freak out! They are real issues as explained below. :)
+
+
+* Deleting a non-exitent favourite resulted in a `400 Bad request` response instead of `404 Not Found` and an error message `INVALID_ACCOUNT` instead of `NOT_FOUND`
+* Expecting the `Save image as a favourite` request to fail with a `400 Bad request` response when the `image_id` was set to just a whitespace (' '). But system processed it successfully and returned a 200 success response.
+
+![](images/failures.png)
+
+```
+┌─────────────────────────┬─────────────────────┬─────────────────────┐
+│                         │            executed │              failed │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│              iterations │                   1 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│                requests │                  19 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│            test-scripts │                  36 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│      prerequest-scripts │                  29 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│              assertions │                  54 │                   5 │
+├─────────────────────────┴─────────────────────┴─────────────────────┤
+│ total run duration: 12.8s                                           │
+├─────────────────────────────────────────────────────────────────────┤
+│ total data received: 5.43kB (approx)                                │
+├─────────────────────────────────────────────────────────────────────┤
+│ average response time: 616ms [min: 446ms, max: 1479ms, s.d.: 234ms] │
+└─────────────────────────────────────────────────────────────────────┘
+```

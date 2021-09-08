@@ -820,6 +820,223 @@
 									"response": []
 								}
 							]
+						},
+						{
+							"name": "Resource Not Found",
+							"item": [
+								{
+									"name": "Get a non-existent Favourite",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 404', () => {",
+													"    pm.response.to.have.status(404);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('NOT_FOUND')",
+													"    pm.expect(error.status).to.eq(404)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{API_KEY}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites/00000",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites",
+												"00000"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete a non-existent Favourite",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 404', () => {",
+													"    pm.response.to.have.status(404);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('NOT_FOUND')",
+													"    pm.expect(error.status).to.eq(404)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{API_KEY}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites/00000",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites",
+												"00000"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Bad Request",
+							"item": [
+								{
+									"name": "Save empty image as Favourite",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// Set the IMAGE_ID",
+													"const counter = pm.environment.get('COUNTER')",
+													"const imageIds = JSON.parse(pm.environment.get('IMAGE_IDS'))",
+													"pm.environment.set('IMAGE_ID', imageIds[counter])",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// schema  ",
+													"const schema = {",
+													"    type: 'object',",
+													"    properties: {",
+													"        message: { type: 'string' },",
+													"        status: { type: 'integer' },",
+													"        level: { type: 'string'} ",
+													"    },",
+													"    required: ['message', 'status', 'level'],",
+													"    additionalProperties: false",
+													"}",
+													"",
+													"// tests",
+													"pm.test('Status code is 400', () => {",
+													"    pm.response.to.have.status(400);",
+													"})",
+													"",
+													"pm.test('Validate schema', () => {",
+													"    pm.response.to.have.jsonSchema(schema)",
+													"})",
+													"",
+													"pm.test('Response contains relevant error message', () => {",
+													"    const error = pm.response.json();",
+													"    pm.expect(error.message).to.eq('\"image_id\" is not allowed to be empty')",
+													"    pm.expect(error.status).to.eq(400)",
+													"    pm.expect(error.level).to.eq('info')",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{API_KEY}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"image_id\": \" \",\n  \"sub_id\": \"{{SUB_ID}}\"\n}"
+										},
+										"url": {
+											"raw": "{{BASE_URL}}/v1/favourites",
+											"host": [
+												"{{BASE_URL}}"
+											],
+											"path": [
+												"v1",
+												"favourites"
+											]
+										}
+									},
+									"response": []
+								}
+							]
 						}
 					]
 				}
