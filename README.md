@@ -37,7 +37,7 @@ We will check various aspects of the response for each request, including the bo
 ## How to install and run tests
 You can run the tests either in Postman or in terminal using Newman.
 
-To begin, clone this repo to your local machine, or just download the [collection]() and [environment]() files from this repo. 
+To begin, clone this repo to your local machine, or just download zip file from this repo. 
 
 #### Postman
 Running in Postman is easy. All you need to do is import the collection and environment files into Postman then run the collection. The screeshot below illustrates how to do so.
